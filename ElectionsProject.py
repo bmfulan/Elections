@@ -48,9 +48,7 @@ else:
             str_cells = str(row_td)
             cleantext = BeautifulSoup(str_cells, "lxml").get_text()
             list_rows.append(cleantext)
-        #print(list_rows)
         start_row = next((i for i, s in enumerate(list_rows) if s.startswith('[Alabama')), None)
-        #print(start_row)
         end_row = next((i for i, s in enumerate(list_rows) if s.startswith('[Totals')), None)
         list_rows2 = list_rows[start_row:end_row-1]+list_rows[end_row:end_row+1]
 
@@ -67,12 +65,10 @@ else:
             df.columns = ['State','D Votes','R Votes']
         df = df[~df['State'].isin(['CD-1','CD-2','CD-3'])]
         df = df.astype({'D Votes': int, 'R Votes': int})
-        #print(df.head(10))
         
         df['D Raw Margin'] = 100*(df['D Votes']-df['R Votes'])/(df['D Votes']+df['R Votes'])
         national_margin = df.loc[df['State'] == 'Totals','D Raw Margin'].values[0]
         df['D Adj Margin'] = df['D Raw Margin'] - national_margin
-        #print(df)
         
         # Add a 'Year' column at the front to identify the data
         df.insert(0, 'Year', year)
