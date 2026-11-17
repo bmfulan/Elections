@@ -101,8 +101,6 @@ else:
     final_df.to_csv(CACHE_FILE, index=False)
     print(f"Scraping complete. Data successfully saved to {CACHE_FILE}")
 
-# %% autocorrelation
-
 # Remove "Totals" entries and entries from 1980 for margin swing analysis
 final_df_states = final_df[final_df['State'] != 'Totals'].copy()
 final_df_states_swing = final_df_states[final_df_states['Year'] != 1980].copy()
@@ -110,11 +108,14 @@ final_df_states_swing = final_df_states[final_df_states['Year'] != 1980].copy()
 # Shift the swing column down by 1 row within each state's group
 final_df_states_swing['Previous Swing'] = final_df_states_swing.groupby('State')['D Adj Margin Swing'].shift(1)
 
-# Drop rows with NaNs (1980 and 1984 will be dropped since they lack a previous swing)
-autocorr_df = final_df_states_swing.dropna(subset=['Previous Swing', 'D Adj Margin Swing'])
 
-# Drop 1988 in order to create clean visual with 9 subplots in 3x3 grid
-autocorr_df_grid = autocorr_df[autocorr_df['Year'] != 1988].copy()
+
+# %% autocorrelation by year
+
+# Drop 1980, 1984, 1988 in order to create clean visual with 9 subplots in 3x3 grid
+autocorr_df_grid = final_df_states_swing[~final_df_states_swing['Year'].isin([1980,1984,1988])].copy()
+
+correlation = autocorr_df_grid['Previous Swing'].corr(autocorr_df_grid['D Adj Margin Swing'])
 
 # Create the empty grid FIRST
 g = sns.FacetGrid(
@@ -125,7 +126,6 @@ g = sns.FacetGrid(
     aspect=1.2,
     sharex=False,
     sharey=False
-    #facet_kws={"sharex": False, "sharey": False}
 )
 
 # Expand the axis limits on all empty charts BEFORE drawing the lines
@@ -176,186 +176,261 @@ g.map_dataframe(annotate_corr)
 
 # Clean up layout
 g.figure.subplots_adjust(top=0.9, hspace=0.6, wspace=0.6) # hspace adds vertical room for the inner labels, wspace adds horizontal
-g.figure.suptitle("Year-by-Year State Swing Autocorrelation", fontsize=16, weight='bold')
+g.figure.suptitle(f"Year-by-Year State Swing Autocorrelation; Overall Autocorrelation: r = {correlation:.2f}", fontsize=16, weight='bold')
 
 #plt.tight_layout()
 plt.show()
 
 
 
+# %% autocorrelation overall
 
+# Drop rows with NaNs (1980 and 1984 will be dropped since they lack a previous swing)
+autocorr_df = final_df_states_swing.dropna(subset=['Previous Swing', 'D Adj Margin Swing'])
 
-# # Calculate the Pearson correlation coefficient
-# correlation = autocorr_df['Previous Swing'].corr(autocorr_df['D Adj Margin Swing'])
-# print(f"Overall Lag-1 Correlation: {correlation:.4f}")
+# Calculate the Pearson correlation coefficient
+correlation = autocorr_df['Previous Swing'].corr(autocorr_df['D Adj Margin Swing'])
+print(f"Overall Lag-1 Correlation: {correlation:.4f}")
 
-# plt.figure(figsize=(10, 8))
+plt.figure(figsize=(10, 8))
 
-# # Generate the scatter plot and linear regression trendline
-# sns.regplot(
-#     data=autocorr_df, 
-#     x='Previous Swing', 
-#     y='D Adj Margin Swing',
-#     scatter_kws={'alpha': 0.4, 'color': 'purple', 'edgecolor': 'w'}, 
-#     line_kws={'color': 'black', 'linewidth': 2}
-# )
+# Generate the scatter plot and linear regression trendline
+sns.regplot(
+    data=autocorr_df, 
+    x='Previous Swing', 
+    y='D Adj Margin Swing',
+    scatter_kws={'alpha': 0.4, 'color': 'purple', 'edgecolor': 'w'}, 
+    line_kws={'color': 'black', 'linewidth': 2}
+)
 
-# # Add the zero-line crosshairs to create the 4 quadrants
-# plt.axhline(0, color='black', linestyle='--', linewidth=1.5)
-# plt.axvline(0, color='black', linestyle='--', linewidth=1.5)
+# Add the zero-line crosshairs to create the 4 quadrants
+plt.axhline(0, color='black', linestyle='--', linewidth=1.5)
+plt.axvline(0, color='black', linestyle='--', linewidth=1.5)
 
-# # Annotate the 4 quadrants so the chart is instantly readable
-# bbox_props = dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8)
+# Annotate the 4 quadrants so the chart is instantly readable
+bbox_props = dict(boxstyle="round,pad=0.3", fc="white", ec="gray", alpha=0.8)
 
-# plt.text(-20, 20, 'Reversion:\nSwung Rep, Bounced Dem', ha='center', bbox=bbox_props)
-# plt.text(20, -20, 'Reversion:\nSwung Dem, Bounced Rep', ha='center', bbox=bbox_props)
-# plt.text(20, 20, 'Momentum:\nSwung Dem, Continued Dem', ha='center', bbox=bbox_props)
-# plt.text(-20, -20, 'Momentum:\nSwung Rep, Continued Rep', ha='center', bbox=bbox_props)
+plt.text(-20, 20, 'Reversion:\nSwung Rep, Bounced Dem', ha='center', bbox=bbox_props)
+plt.text(20, -20, 'Reversion:\nSwung Dem, Bounced Rep', ha='center', bbox=bbox_props)
+plt.text(20, 20, 'Momentum:\nSwung Dem, Continued Dem', ha='center', bbox=bbox_props)
+plt.text(-20, -20, 'Momentum:\nSwung Rep, Continued Rep', ha='center', bbox=bbox_props)
 
-# # Format axes and titles
-# plt.title(f"Election Swings: Momentum vs. Reversion (r = {correlation:.2f})", fontsize=14)
-# plt.xlabel("Previous Election Swing (%)")
-# plt.ylabel("Current Election Swing (%)")
+# Format axes and titles
+plt.title(f"Election Swings: Momentum vs. Reversion (r = {correlation:.2f})", fontsize=14)
+plt.xlabel("Previous Election Swing (%)")
+plt.ylabel("Current Election Swing (%)")
 
-# plt.tight_layout()
-# plt.show()
-
-
-
-
-# # Define the list of swing states
-# swing_states = ['Arizona', 'Georgia', 'Michigan', 'Nevada', 'North Carolina', 'Pennsylvania', 'Wisconsin']
-
-# # Filter the master DataFrame to only include these states
-# final_df_swing_states = final_df_states[final_df_states['State'].isin(swing_states)].copy()
-# # clean up dataframe names!!!
-
-# # Configure the visualization canvas
-# plt.figure(figsize=(12, 7))
-
-# # Generate the line plot
-# # 'hue' groups the data by State and assigns unique colors
-# # 'marker="o"' adds dots at each specific election year
-# sns.lineplot(
-#     data=final_df_swing_states, 
-#     x='Year', 
-#     y='D Adj Margin', 
-#     hue='State', 
-#     marker='o',
-#     linewidth=2,
-#     palette='tab10'  # A color palette with distinct, high-contrast colors
-# )
-
-# # Add a reference line at 0 to show who won the two-party vote in that state
-# plt.axhline(0, color='black', linestyle='--', linewidth=1.5, alpha=0.7)
-
-# # Format the axes and legend
-# plt.title("Democratic Two-Party Vote Margin (%) in Modern Swing States (1980-2024)", fontsize=14)
-# plt.ylabel("Democratic Two-Party Vote Margin")
-# plt.xlabel("Election Year")
-
-# # Ensure the x-axis displays ticks for every 4 years rather than arbitrary decimals
-# years = sorted(final_df_swing_states['Year'].unique())
-# plt.xticks(years, rotation=45) 
-
-# # Move the legend outside the plot so it doesn't cover the data lines
-# plt.legend(title='State', bbox_to_anchor=(1.05, 1), loc='upper left')
-
-# # Adjust layout to fit the external legend
-# plt.tight_layout()
-# plt.show()
+plt.tight_layout()
+plt.show()
 
 
 
+# %% Wisconsin: raw vs adjusted margin
+wi = final_df_states[final_df_states['State'] == 'Wisconsin']
 
-# # Create a summary DataFrame for all states
-# # .agg() allows you to calculate multiple statistics at once
-# state_summary = final_df_states_swing.groupby('State')['D Adj Margin Swing'].agg(['mean', 'std']).reset_index()
+# Reshape from wide (two margin columns) to long (one 'Measure' column, one value column)
+wi_long = wi.melt(
+    id_vars='Year',
+    value_vars=['D Raw Margin', 'D Adj Margin'],
+    var_name='Measure',
+    value_name='Margin (percentage points)'
+)
 
-# # Rename columns for clarity
-# state_summary.columns = ['State', 'D Adj Margin Swing Mean', 'D Adj Margin Swing StdDev']
-# print(state_summary)
+wi_long['Measure'] = wi_long['Measure'].replace({
+    'D Raw Margin' : 'Democratic Raw Margin',
+    'D Adj Margin' : 'Democratic Adjusted Margin'
+})
 
-# # Add the absolute swing (magnitude) to the master DataFrame
-# final_df_states_swing['Abs Adj Margin Swing'] = final_df_states_swing['D Adj Margin Swing'].abs().copy()
+plt.figure(figsize=(10, 6))
+ax = sns.lineplot(
+    data=wi_long,
+    x='Year',
+    y='Margin (percentage points)',
+    hue='Measure',
+    marker='o',
+    linewidth=2
+)
 
-# # Create a summary DataFrame for all years
-# year_summary = final_df_states_swing.groupby('Year')['Abs Adj Margin Swing'].agg(['mean', 'std']).reset_index()
-# year_summary.columns = ['Year', 'Abs Adj Margin Swing Mean', 'Abs Adj Margin Swing StdDev']
-# print(year_summary)
+# Shade the gap between the two lines (this gap is the national margin each year)
+ax.fill_between(wi['Year'], wi['D Raw Margin'], wi['D Adj Margin'], alpha=0.12, color='gray')
 
+# Zero line: above = Democratic, below = Republican
+ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.7)
 
-
-# # Pivot the long-format data into a wide matrix for the heatmap
-# heatmap_data = final_df_states.pivot(index='State', columns='Year', values='D Adj Margin Swing')
-
-# # Drop the year 1980 since its diff() values are all NaN
-# if 1980 in heatmap_data.columns:
-#     heatmap_data = heatmap_data.drop(columns=[1980])
-
-# # Configure the visualization canvas
-# plt.figure(figsize=(12, 13.5))
-
-# # Generate the heatmap
-# # 'RdBu' maps negative numbers to Red (Republican swing) and positive to Blue (Dem swing)
-# sns.heatmap(
-#     heatmap_data, 
-#     cmap='RdBu', 
-#     center=0,          # Anchors the color white at exactly 0.0 swing
-#     annot=True,        # Displays the actual numeric value in the cell
-#     fmt=".3f",         # Formats the decimal places
-#     linewidths=0.5     # Adds gridlines between cells
-# )
-
-# plt.title("State-by-State Democratic Two-Party Vote Share Swing")
-# plt.xlabel("Election Year")
-# plt.ylabel("State")
-# plt.tight_layout()
-# plt.show()
+ax.set_xticks(sorted(wi['Year'].unique()))
+ax.tick_params(axis='x', rotation=45)
+ax.set_title("Wisconsin: Raw vs. Adjusted Democratic Two-Party Margin, 1980-2024")
+plt.tight_layout()
+plt.show()
 
 
 
+# %% swing states adj margin
+
+# Define the list of swing states
+swing_states = ['Arizona', 'Georgia', 'Michigan', 'Nevada', 'North Carolina', 'Pennsylvania', 'Wisconsin']
+
+# Filter the master DataFrame to only include these states
+final_df_swing_states = final_df_states[final_df_states['State'].isin(swing_states)].copy()
+# clean up dataframe names!!!
+
+# Configure the visualization canvas
+plt.figure(figsize=(12, 7))
+
+# Generate the line plot
+# 'hue' groups the data by State and assigns unique colors
+# 'marker="o"' adds dots at each specific election year
+sns.lineplot(
+    data=final_df_swing_states, 
+    x='Year', 
+    y='D Adj Margin', 
+    hue='State', 
+    marker='o',
+    linewidth=2,
+    palette='tab10'  # A color palette with distinct, high-contrast colors
+)
+
+# Add a reference line at 0 to show who won the two-party vote in that state
+plt.axhline(0, color='black', linestyle='--', linewidth=1.5, alpha=0.7)
+
+# Format the axes and legend
+plt.title("Democratic Two-Party Vote Margin (%) in Modern Swing States (1980-2024)", fontsize=14)
+plt.ylabel("Democratic Two-Party Vote Margin")
+plt.xlabel("Election Year")
+
+# Ensure the x-axis displays ticks for every 4 years rather than arbitrary decimals
+years = sorted(final_df_swing_states['Year'].unique())
+plt.xticks(years, rotation=45) 
+
+# Move the legend outside the plot so it doesn't cover the data lines
+plt.legend(title='State', bbox_to_anchor=(1.05, 1), loc='upper left')
+
+# Adjust layout to fit the external legend
+plt.tight_layout()
+plt.show()
 
 
 
+# %% state & year summaries
 
-# df_sorted = df.iloc[:-1]
-# df_sorted = df_sorted.sort_values(by='D Adj Margin')
+# Create a summary DataFrame for all states
+# .agg() allows you to calculate multiple statistics at once
+state_summary = final_df_states_swing.groupby('State')['D Adj Margin Swing'].agg(['mean', 'std']).reset_index()
 
-# # Assuming df_sorted is your dataframe and already sorted by 'D Margin'
-# states = df_sorted['State'].values
-# margins = df_sorted['D Adj Margin'].values
+# Rename columns for clarity
+state_summary.columns = ['State', 'D Adj Margin Swing Mean', 'D Adj Margin Swing StdDev']
+print(state_summary)
 
-# # Use numeric y-positions for the 51 entities (50 states + DC)
-# y_pos = np.arange(len(states))
+# Add the absolute swing (magnitude) to the master DataFrame
+final_df_states_swing['Abs Adj Margin Swing'] = final_df_states_swing['D Adj Margin Swing'].abs().copy()
 
-# # Create masks for the positive (Blue) and negative/zero (Red) values
-# is_dem = margins > 0
-# is_rep = margins <= 0
+# Create a summary DataFrame for all years
+year_summary = final_df_states_swing.groupby('Year')['Abs Adj Margin Swing'].agg(['mean', 'std']).reset_index()
+year_summary.columns = ['Year', 'Abs Adj Margin Swing Mean', 'Abs Adj Margin Swing StdDev']
+print(year_summary)
 
-# # Create a figure that is taller than it is wide to accommodate all labels
-# fig, ax = plt.subplots(figsize=(8, 12))
 
-# # Draw the horizontal stem lines starting from 0 to the margin value
-# ax.hlines(y=y_pos[is_dem], xmin=0, xmax=margins[is_dem], color='blue', linewidth=1.5)
-# ax.hlines(y=y_pos[is_rep], xmin=0, xmax=margins[is_rep], color='red', linewidth=1.5)
 
-# # Draw the filled circle markers at the end of each stem
-# ax.plot(margins[is_dem], y_pos[is_dem], 'bo')  # Blue circles
-# ax.plot(margins[is_rep], y_pos[is_rep], 'ro')  # Red circles
+# %% heatmap adj margin
 
-# # Draw the solid black baseline at x=0
-# ax.axvline(x=0, color='black', linewidth=1.5)
+# Remove DC since it skews the colors
+final_df_states = final_df_states[final_df_states['State'] != 'District of Columbia'].copy()
 
-# # Format the Y-axis to display the state names
-# ax.set_yticks(y_pos)
-# ax.set_yticklabels(states, fontsize=9)
+# Pivot the long-format data into a wide matrix for the heatmap
+heatmap_data = final_df_states.pivot(index='State', columns='Year', values='D Adj Margin')
 
-# # Format the X-axis and overall chart properties
-# ax.set_xlabel("Democratic Margin (%)")
-# ax.set_title("2024 Adjusted Democratic Vote Margin by State")
-# ax.grid(axis='x', linestyle='--', alpha=0.7)
+# Configure the visualization canvas
+plt.figure(figsize=(12, 13.5))
 
-# # Adjust padding so the state labels are not cut off
-# plt.tight_layout()
-# plt.show()
+# Generate the heatmap
+# 'RdBu' maps negative numbers to Red (Republican swing) and positive to Blue (Dem swing)
+sns.heatmap(
+    heatmap_data, 
+    cmap='RdBu', 
+    center=0,          # Anchors the color white at exactly 0.0 swing
+    annot=True,        # Displays the actual numeric value in the cell
+    fmt=".3f",         # Formats the decimal places
+    linewidths=0.5     # Adds gridlines between cells
+)
+
+plt.title("State-by-State Democratic Adjusted Margin, 1980-2024")
+plt.xlabel("Election Year")
+plt.ylabel("State")
+plt.tight_layout()
+plt.show()
+
+
+
+# %% heatmap adj margin swing
+
+# Pivot the long-format data into a wide matrix for the heatmap
+heatmap_data = final_df_states.pivot(index='State', columns='Year', values='D Adj Margin Swing')
+
+# Drop the year 1980 since its diff() values are all NaN
+if 1980 in heatmap_data.columns:
+    heatmap_data = heatmap_data.drop(columns=[1980])
+
+# Configure the visualization canvas
+plt.figure(figsize=(12, 13.5))
+
+# Generate the heatmap
+# 'RdBu' maps negative numbers to Red (Republican swing) and positive to Blue (Dem swing)
+sns.heatmap(
+    heatmap_data, 
+    cmap='RdBu', 
+    center=0,          # Anchors the color white at exactly 0.0 swing
+    annot=True,        # Displays the actual numeric value in the cell
+    fmt=".3f",         # Formats the decimal places
+    linewidths=0.5     # Adds gridlines between cells
+)
+
+plt.title("State-by-State Democratic Adjusted Margin Swing, 1980-2024")
+plt.xlabel("Election Year")
+plt.ylabel("State")
+plt.tight_layout()
+plt.show()
+
+
+
+# %% 2024 lollipop chart
+
+df_sorted = final_df_states[final_df_states['Year'] == 2024]
+df_sorted = df_sorted.sort_values(by='D Adj Margin')
+
+# Assuming df_sorted is your dataframe and already sorted by 'D Margin'
+states = df_sorted['State'].values
+margins = df_sorted['D Adj Margin'].values
+
+# Use numeric y-positions for the 51 entities (50 states + DC)
+y_pos = np.arange(len(states))
+
+# Create masks for the positive (Blue) and negative/zero (Red) values
+is_dem = margins > 0
+is_rep = margins <= 0
+
+# Create a figure that is taller than it is wide to accommodate all labels
+fig, ax = plt.subplots(figsize=(8, 12))
+
+# Draw the horizontal stem lines starting from 0 to the margin value
+ax.hlines(y=y_pos[is_dem], xmin=0, xmax=margins[is_dem], color='blue', linewidth=1.5)
+ax.hlines(y=y_pos[is_rep], xmin=0, xmax=margins[is_rep], color='red', linewidth=1.5)
+
+# Draw the filled circle markers at the end of each stem
+ax.plot(margins[is_dem], y_pos[is_dem], 'bo')  # Blue circles
+ax.plot(margins[is_rep], y_pos[is_rep], 'ro')  # Red circles
+
+# Draw the solid black baseline at x=0
+ax.axvline(x=0, color='black', linewidth=1.5)
+
+# Format the Y-axis to display the state names
+ax.set_yticks(y_pos)
+ax.set_yticklabels(states, fontsize=9)
+
+# Format the X-axis and overall chart properties
+ax.set_xlabel("Democratic Margin (%)")
+ax.set_title("2024 Adjusted Democratic Vote Margin by State")
+ax.grid(axis='x', linestyle='--', alpha=0.7)
+
+# Adjust padding so the state labels are not cut off
+plt.tight_layout()
+plt.show()
