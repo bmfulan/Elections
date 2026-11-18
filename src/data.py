@@ -35,7 +35,7 @@ def scrape_year(year):
     df = df_series.str.split(', ', expand=True)
     df = df[[0,2,5]].copy()
     df = df.replace(',', '', regex=True)
-    df = df.replace('\*', '', regex=True)
+    df = df.replace(r'\*', '', regex=True)
     df = df.replace('Dist. of Col.', 'District of Columbia', regex=True)
     if year in [1980, 1984, 1988, 2000, 2004]:
         df.columns = ['State','R Votes','D Votes']

@@ -88,10 +88,6 @@ else:
     # Group by state, then calculate the difference from the previous row
     final_df['D Adj Margin Swing'] = final_df.groupby('State')['D Adj Margin'].diff()
 
-    # Show the final dataset by state
-    for i in range(52):
-        print(final_df.iloc[12*i:12*i+12])
-
     # Save the final dataset to a CSV file
     # index=False prevents pandas from writing the row numbers as a new column
     final_df.to_csv(CACHE_FILE, index=False)
