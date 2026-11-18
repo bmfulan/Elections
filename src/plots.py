@@ -20,6 +20,7 @@ def _annotate_corr(data, **kws):
 
 
 def plot_swing_autocorrelation(autocorr_df, outfile=FIGURES_DIR / 'swing_autocorrelation.png'):
+    correlation = autocorr_df['Previous Swing'].corr(autocorr_df['D Adj Margin Swing'])
     g = sns.FacetGrid(autocorr_df, col='Year', col_wrap=3, height=2.6, aspect=1.2, sharex=False, sharey=False)
     g.set(xlim=(-15, 15), ylim=(-15, 15))
     g.map_dataframe(sns.regplot, x='Previous Swing', y='D Adj Margin Swing', ci=None, truncate=False,
@@ -41,8 +42,9 @@ def plot_swing_autocorrelation(autocorr_df, outfile=FIGURES_DIR / 'swing_autocor
         # Add zero-line crosshairs
         ax.axhline(0, color='gray', linestyle='--', linewidth=1)
         ax.axvline(0, color='gray', linestyle='--', linewidth=1)
-        g.figure.subplots_adjust(top=0.9, hspace=0.6, wspace=0.6)
-        g.figure.suptitle("Year-by-Year State Swing Autocorrelation", fontsize=16, weight='bold')
+
+    g.figure.subplots_adjust(top=0.9, hspace=0.6, wspace=0.6)
+    g.figure.suptitle(f"Year-by-Year State Swing Autocorrelation; Overall Autocorrelation: r = {correlation:.2f}", fontsize=16, weight='bold')
 
     _save(g.figure, outfile)
 
