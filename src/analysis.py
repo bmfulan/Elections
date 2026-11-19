@@ -22,5 +22,4 @@ def autocorrelation_data(df, exclude_years=()):
 
 
 def swing_summary_by_state(df):
-    return (swing_data(df).groupby('State')['D Adj Margin Swing']
-            .agg(['mean', 'std']).reset_index())
+    return (swing_data(df).groupby('State')['D Adj Margin Swing'].agg(['mean', 'std']).reset_index())

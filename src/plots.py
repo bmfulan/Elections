@@ -87,3 +87,32 @@ def plot_state_margins(df, state='Wisconsin', outfile=None):
     g.set_title("Wisconsin: Raw vs. Adjusted Democratic Two-Party Margin, 1980-2024")
     plt.tight_layout()
     _save(fig, outfile or FIGURES_DIR / f'{state.lower()}_raw_vs_adjusted.png')
+
+
+def plot_adj_margin_heatmap(df, outfile=None):
+    # Remove DC since it skews the colors
+    df = df[df['State'] != 'District of Columbia'].copy()
+
+    # Pivot the long-format data into a wide matrix for the heatmap
+    heatmap_data = df.pivot(index='State', columns='Year', values='D Adj Margin')
+
+    # Configure the visualization canvas
+    fig, ax = plt.subplots(figsize=(12, 13.5))
+
+    # Generate the heatmap
+    # 'RdBu' maps negative numbers to Red (Republican swing) and positive to Blue (Dem swing)
+    g = sns.heatmap(
+        ax=ax,
+        data=heatmap_data, 
+        cmap='RdBu', 
+        center=0,          # Anchors the color white at exactly 0.0 swing
+        annot=True,        # Displays the actual numeric value in the cell
+        fmt=".3f",         # Formats the decimal places
+        linewidths=0.5     # Adds gridlines between cells
+    )
+
+    g.set_title("State-by-State Democratic Adjusted Margin, 1980-2024")
+    g.set_xlabel("Election Year")
+    g.set_ylabel("State")
+    plt.tight_layout()
+    _save(fig, outfile or FIGURES_DIR / 'adj_margin_heatmap.png')
