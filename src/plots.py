@@ -49,7 +49,8 @@ def plot_swing_autocorrelation(autocorr_df, outfile=FIGURES_DIR / 'swing_autocor
     _save(g.figure, outfile)
 
 
-def plot_state_margins(df, state='Wisconsin', outfile=None):
+def plot_state_margins(df, outfile=None):
+    # Currently set up for only Wisconsin - have to modify if I want to generalize to other states
     wi = df[df['State'] == 'Wisconsin']
 
     # Reshape from wide (two margin columns) to long (one 'Measure' column, one value column)
@@ -86,7 +87,7 @@ def plot_state_margins(df, state='Wisconsin', outfile=None):
     g.tick_params(axis='x', rotation=45)
     g.set_title("Wisconsin: Raw vs. Adjusted Democratic Two-Party Margin, 1980-2024")
     plt.tight_layout()
-    _save(fig, outfile or FIGURES_DIR / f'{state.lower()}_raw_vs_adjusted.png')
+    _save(fig, outfile or FIGURES_DIR / 'wisconsin_raw_vs_adjusted.png')
 
 
 def plot_adj_margin_heatmap(df, outfile=None):
@@ -107,7 +108,7 @@ def plot_adj_margin_heatmap(df, outfile=None):
         cmap='RdBu', 
         center=0,          # Anchors the color white at exactly 0.0 swing
         annot=True,        # Displays the actual numeric value in the cell
-        fmt=".3f",         # Formats the decimal places
+        fmt=".1f",         # Formats the decimal places
         linewidths=0.5     # Adds gridlines between cells
     )
 

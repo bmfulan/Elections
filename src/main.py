@@ -6,5 +6,5 @@ from plots import plot_swing_autocorrelation, plot_state_margins, plot_adj_margi
 if __name__ == '__main__':
     df = load_data()
     plot_swing_autocorrelation(autocorrelation_data(df, exclude_years=[1988]))
-    plot_state_margins(df, 'Wisconsin')
+    plot_state_margins(df)
     plot_adj_margin_heatmap(state_results(df))
